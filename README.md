@@ -14,7 +14,7 @@ An end-to-end data engineering project that ingests raw retail CSV files, cleans
 
 ## 1. Architecture Overview
 
-![Architecture](assets/architecture.png)
+![Architecture](assets/architecture.jpg)
 
 Catalog: `ecommerce` · Schemas: `bronze`, `silver`, `gold` · Source: Unity Catalog Volume `/Volumes/ecommerce/source_data/raw/`
 
@@ -23,6 +23,12 @@ Catalog: `ecommerce` · Schemas: `bronze`, `silver`, `gold` · Source: Unity Cat
 | 🥉 **Bronze** | Raw ingest with explicit schemas + lineage metadata (source file, ingestion timestamp) | 6 `brz_*` tables |
 | 🥈 **Silver** | Cleaned, deduplicated, standardized, correctly typed | 6 `slv_*` tables |
 | 🥇 **Gold** | Star schema: conformed dimensions + fact with derived measures | 3 dimensions, 1 fact, 1 denormalized fact for BI |
+
+### Unity Catalog tables
+
+![Bronze tables](assets/catalog-ecommerce-bronze.png)
+![Silver tables](assets/catalog-ecommerce-silver.png)
+![Gold tables](assets/golcatalog-ecommerce-gold.png)
 
 ## 2. Tech Stack
 
@@ -48,7 +54,7 @@ Notebooks run in this order:
 | 6 | `.../2_fact_silver` | Cleans order items |
 | 7 | `.../3_fact_gold` | Builds `gld_fact_order_items` |
 
-Orchestrated with a Databricks Workflow: 7 tasks with dependencies, running dimension and fact branches in parallel.
+Orchestrated with a Databricks Workflow: 7 tasks with dependencies, running dimension and fact branches in parallel. The job definition is in `workflows/job_definition.json`.
 
 ![Workflow](assets/workflow_dag.png)
 
@@ -71,7 +77,9 @@ Orchestrated with a Databricks Workflow: 7 tasks with dependencies, running dime
 
 ## 4. Business Insights & Dashboard
 
-![Dashboard](assets/dashboard.png)
+![Monthly Sales Trend](assets/Monthly%20Sales%20Trend.png)
+![Net Amount by Category](assets/Net%20Amount%20by%20Category.png)
+![Visualization](assets/visualization.png)
 
 | Business question | Query |
 |---|---|
@@ -81,7 +89,7 @@ Orchestrated with a Databricks Workflow: 7 tasks with dependencies, running dime
 | Who are the top customers per region? | Q4 |
 | Do coupons change discount and order value? | Q5 |
 
-**Headline findings:** 
+**Headline findings:**
 - **Electronics** is the top category, generating about **₹1.4B** in net revenue
 - Sales peaked in **August 2025** at about **₹621.68M**
 
@@ -91,9 +99,9 @@ Orchestrated with a Databricks Workflow: 7 tasks with dependencies, running dime
 
 1. Clone: `git clone https://github.com/1rfaan/databricks-medallion-ecommerce.git`
 2. In Databricks, **Workspace → Import** the `notebooks/` folders.
-3. Upload the CSVs from `datasets/` into a Volume at `/Volumes/ecommerce/source_data/raw/` (one subfolder per dataset; order items go in `order_items/landing/`).
+3. Source CSVs are not included in this repo. Create the Volume folders under `/Volumes/ecommerce/source_data/raw/` and upload your own CSV files matching the schemas defined in `1_dim_bronze` and `1_fact_bronze` (order items go in `order_items/landing/`).
 4. Run the notebooks in the order shown in Section 3.
-5. Run the queries in `sql/dashboard_queries.sql` or build the dashboard on `gld_fact_order_items`.
+5. Run the queries in `sql/dashboard_queries.sql`. Q4–Q5 use `gld_fact_order_items`; Q1–Q3 use `fact_transactions_denorm`, a denormalized table (fact + date + product attributes) that feeds the dashboard.
 
 ## 6. Repository Structure
 
@@ -102,7 +110,6 @@ Orchestrated with a Databricks Workflow: 7 tasks with dependencies, running dime
 │   ├── 1_setup/
 │   ├── 2_medallion_processing_dim/
 │   └── 3_medallion_processing_fact/
-├── datasets/
 ├── sql/
 ├── workflows/
 └── assets/
@@ -114,7 +121,6 @@ Orchestrated with a Databricks Workflow: 7 tasks with dependencies, running dime
 - Cleaning real-world data anomalies without losing lineage
 - Modeling a star schema with derived business measures
 - Building a multi-task Databricks Workflow with dependencies
-- Cleaning messy real-world data before modeling it
 
 ## 8. Author
 
